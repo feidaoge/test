@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Market Sentiment Daily</title>
+    
+    <!-- React 18 CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        #root {
+            min-height: 100vh;
+        }
+        /* 打印优化 */
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel" data-presets="react">
+        const { useState, useEffect, createContext, useContext } = React;
+        
+
+const translations = {
+  en: {
+    pageTitle: 'Crypto Market Sentiment Daily',
+    pageSubtitle: 'In-depth sentiment analysis with comprehensive driver breakdown and historical context.',
+    marketPulse: 'Market Sentiment & Five Drivers',
+    marketPulseDesc: 'Quantified sentiment score with detailed factor analysis.',
+    contributingFactors: 'Five Key Drivers - Detailed Analysis',
+    extremeFear: 'Extreme Fear', fear: 'Fear', neutral: 'Neutral', optimistic: 'Optimistic', extremeGreed: 'Extreme Greed',
+    tapeStructure: 'Tape & Structure', leverageLiquidations: 'Leverage & Liquidations', institutionalFlows: 'Institutional / On-chain',
+    macroRisks: 'Macro & Risk Events', socialNarrative: 'Social & Narrative',
+    mssScore: 'MSS', extremeFearZone: 'Extreme Fear Zone (0-20)', meaningLabel: 'Reading', weight: 'Weight', score: 'Score', direction: 'Direction',
+    evidence: 'Evidence from Today\'s News', conclusion: 'Conclusion', analysis: 'In-Depth Analysis',
+    historicalReplay: 'Historical Event Retrospective', historicalReplayDesc: 'Similar historical events with detailed context and aftermath.',
+    backgroundContext: 'Background & Context', marketConditions: 'Market Conditions', whatHappened: 'What Actually Happened After',
+    newsTimeline: 'Today\'s News Briefings', newsTimelineDesc: 'Comprehensive briefings with context and market relevance.',
+    dataSource: 'Data Source', reportDate: 'Report Date', items: 'items', marketRelevance: 'Market Relevance',
+  },
+  zh: {
+    pageTitle: '加密市场情绪日报',
+    pageSubtitle: '深度情绪分析与市场驱动因子拆解，结合历史背景研判。',
+    marketPulse: '当下市场情绪与五重驱动因子',
+    marketPulseDesc: '量化情绪得分与详细因子分析。',
+    contributingFactors: '五重驱动因子 - 详细分析',
+    extremeFear: '极度恐惧', fear: '恐惧', neutral: '中性', optimistic: '乐观', extremeGreed: '极度贪婪',
+    tapeStructure: '价格与结构', leverageLiquidations: '杠杆与清算', institutionalFlows: '机构 / 链上资金',
+    macroRisks: '宏观与风险事件', socialNarrative: '社交与叙事分布',
+    mssScore: 'MSS', extremeFearZone: '极度恐惧区间 (0-20)', meaningLabel: '读数说明', weight: '权重', score: '得分', direction: '当前方向',
+    evidence: '来自当日资讯的直接事实', conclusion: '结论', analysis: '深度分析',
+    historicalReplay: '历史事件回溯', historicalReplayDesc: '历史相似事件详细背景与后续发展分析。',
+    backgroundContext: '事件背景与脉络', marketConditions: '当时市场状况', whatHappened: '后续实际发生',
+    newsTimeline: '当日资讯简报', newsTimelineDesc: '综合资讯简报，附带背景说明与市场关联分析。',
+    dataSource: '数据来源', reportDate: '报告日期', items: '条', marketRelevance: '市场关联',
+  }
+};
+
+const LanguageContext = createContext();
+const useLanguage = () => useContext(LanguageContext);
+const LanguageProvider = ({ children }) => {
+  const [lang, setLang] = useState('zh');
+  const t = (key) => translations[lang][key] || key;
+  return <LanguageContext.Provider value={{ lang, setLang, t }}>{children}</LanguageContext.Provider>;
+};
+
+const useResponsive = () => {
+  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  useEffect(() => {
+    const h = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+  return { isMobile: width < 640 };
+};
+
+const LanguageToggle = () => {
+  const { lang, setLang } = useLanguage();
+  return (
+    <div style={{ display: 'flex', gap: '4px', background: '#F5F5F4', borderRadius: '8px', padding: '3px' }}>
+      {['en', 'zh'].map(l => (
+        <button key={l} onClick={() => setLang(l)} style={{
+          padding: '8px 16px', fontSize: '13px', fontWeight: lang === l ? '600' : '400', border: 'none', borderRadius: '6px',
+          cursor: 'pointer', background: lang === l ? '#FFF' : 'transparent', color: lang === l ? '#1C1917' : '#78716C',
+        }}>{l === 'en' ? 'EN' : '中文'}</button>
+      ))}
+    </div>
+  );
+};
+
+const reportData = {
+  "date": "2026-02-09",
+  "dataSource": {
+    "en": "Multi-source News (CNBC, CoinDesk, Coinglass, CoinStats, Alternative.me, Yahoo Finance)",
+    "zh": "多源聚合资讯（CNBC、CoinDesk、Coinglass、CoinStats、Alternative.me、Yahoo Finance）"
+  },
+  "mssScore": 11,
+  "drivers": [
+    {
+      "key": "tapeStructure",
+      "score": 10,
+      "weight": 25,
+      "icon": "📉",
+      "direction": {
+        "en": "Post-Crash Stabilization — Testing $69K After V-Shape Recovery",
+        "zh": "崩盘后企稳 — V型反弹后测试 $69K"
+      },
+      "evidence": {
+        "en": [
+          "BTC crashed to $60,008 on Feb 5 — steepest single-day drop (-15%) since FTX collapse in Nov 2022, erasing all gains since Oct 2024.",
+          "V-shape recovery on Feb 6: surged back above $71,000, largest single-day rebound since early 2023. Recovery took less than 24 hours.",
+          "Currently trading at $69,150 on Feb 9 (down ~3% on the day), giving back some recovery gains. ATH drawdown: -45% from $126,080 (Oct 2025).",
+          "BTC has broken below its 365-day moving average for the first time since March 2022. Weekly RSI dropped below 21 — third-lowest oversold reading in BTC history.",
+          "Total crypto market lost ~$800B+ from peak. Bitcoin market cap at $1.38 trillion."
+        ],
+        "zh": [
+          "BTC 于 2 月 5 日暴跌至 $60,008 — 自 2022 年 11 月 FTX 崩盘以来最陡峭的单日跌幅（-15%），抹去 2024 年 10 月以来所有涨幅。",
+          "2 月 6 日 V 型反弹：飙升回 $71,000 以上，为 2023 年初以来最大单日反弹幅度。恢复用时不到 24 小时。",
+          "2 月 9 日当前交易于 $69,150（日内跌约 3%），回吐部分复苏涨幅。距历史高点 $126,080（2025 年 10 月）回撤 -45%。",
+          "BTC 自 2022 年 3 月以来首次跌破 365 日移动均线。周线 RSI 跌破 21——BTC 历史第三低超卖读数。",
+          "加密总市值从峰值蒸发超 8000 亿美元。比特币市值 1.38 万亿美元。"
+        ]
+      },
+      "analysis": {
+        "en": "The Feb 5-6 crash-recovery sequence remains the dominant story: a 15% crash followed by a same-day rebound above $71K. However, today's drift back to $69K suggests the recovery lacks conviction. Breaking below the 365-day MA for the first time since March 2022 is technically significant — that 2022 breakdown preceded a further 23% decline. Weekly RSI below 21 has only been seen twice before in BTC history, both times near generational bottoms. Critical support at $60K-$65K held during the crash, but a retest cannot be ruled out given ongoing macro headwinds.",
+        "zh": "2 月 5-6 日的崩盘-复苏序列仍是主导叙事：15% 崩盘后同日反弹至 $71K 以上。然而，今日回落至 $69K 表明复苏缺乏信念。自 2022 年 3 月以来首次跌破 365 日均线具有技术意义——2022 年那次跌破后又下跌了 23%。周线 RSI 低于 21 在 BTC 历史上仅出现过两次，均接近世代级底部。崩盘期间 $60K-$65K 关键支撑守住，但在持续宏观逆风下不排除再次测试的可能。"
+      },
+      "conclusion": {
+        "en": "V-shape recovery speed impressive but today's pullback signals incomplete bottom formation. Technically oversold at historic extremes but macro headwinds keep risk elevated. Watch $65K support closely.",
+        "zh": "V 型反弹速度令人印象深刻，但今日回落表明底部尚未形成。技术上处于历史极端超卖，但宏观逆风使风险持续升高。密切关注 $65K 支撑。"
+      }
+    },
+    {
+      "key": "leverageLiquidations",
+      "score": 8,
+      "weight": 20,
+      "icon": "⚡",
+      "direction": {
+        "en": "Historic Deleveraging Week — $2.56B Single-Day Record",
+        "zh": "历史级去杠杆周 — $25.6 亿单日清算纪录"
+      },
+      "evidence": {
+        "en": [
+          "Saturday Feb 1 saw $2.56 billion in crypto liquidations — the 10th-biggest single-day event ever per Coinglass.",
+          "Feb 5 added another $1.45 billion in 24-hour liquidations (311,000 traders affected), with longs accounting for $1.24 billion.",
+          "BTC liquidations: $738.83M on Feb 5 alone. ETH: $417.43M. Total week: $4B+ in liquidations.",
+          "Open interest fell below $100 billion. Put premiums over calls exceeded 10+ points on Deribit — extreme fear in options market.",
+          "CME raised margin requirements: gold futures from 6% to 8%, silver from 11% to 15% — amplifying forced selling across asset classes."
+        ],
+        "zh": [
+          "2 月 1 日（周六）加密清算达 25.6 亿美元——据 Coinglass 为史上第 10 大单日清算事件。",
+          "2 月 5 日再增 14.5 亿美元 24 小时清算（影响 31.1 万交易者），多头占 12.4 亿美元。",
+          "BTC 清算：仅 2 月 5 日即达 7.39 亿美元。ETH：4.17 亿美元。全周总计：超 40 亿美元清算。",
+          "未平仓合约跌破 1000 亿美元。Deribit 看跌期权溢价超看涨 10+ 点——期权市场极度恐惧。",
+          "CME 提高保证金要求：黄金期货从 6% 升至 8%，白银从 11% 升至 15%——放大跨资产强制平仓。"
+        ]
+      },
+      "analysis": {
+        "en": "This week's cumulative $4B+ in liquidations approaches the most severe deleveraging events in crypto history. The 10th-largest single-day event on Feb 1 was followed by another massive wave on Feb 5, creating a cascading liquidation effect. CME margin hikes in precious metals further amplified cross-asset forced selling, as leveraged traders faced margin calls across gold, silver, and crypto simultaneously. The silver lining: open interest has been flushed to multi-month lows, creating a 'cleaner' market structure with less leverage overhead.",
+        "zh": "本周累计超 40 亿美元清算接近加密史上最严重的去杠杆事件。2 月 1 日的第 10 大单日事件之后 2 月 5 日又出现大规模清算浪潮，形成级联清算效应。CME 贵金属保证金上调进一步放大跨资产强制平仓，杠杆交易者在黄金、白银和加密市场同时面临追保。积极面：未平仓合约已被冲刷至数月低点，创造了杠杆压力更小的'更清洁'市场结构。"
+      },
+      "conclusion": {
+        "en": "Historic-scale deleveraging largely complete. Cascading liquidations have flushed most leveraged longs, creating healthier structure. Short-term volatility risk remains but the worst of forced selling likely behind us.",
+        "zh": "历史级去杠杆基本完成。级联清算已冲刷大部分杠杆多头，创造更健康结构。短期波动风险犹存但最严重的强制抛售可能已过。"
+      }
+    },
+    {
+      "key": "institutionalFlows",
+      "score": 15,
+      "weight": 25,
+      "icon": "🐋",
+      "direction": {
+        "en": "Divergence Deepens — ETF Whipsaw vs Corporate Conviction",
+        "zh": "分歧加深 — ETF 剧烈震荡 vs 企业坚定持有"
+      },
+      "evidence": {
+        "en": [
+          "US BTC ETFs cumulative outflows since Nov 2025: ~$6.18 billion — longest sustained outflow streak since Jan 2024 launch.",
+          "Wild ETF whipsaw this week: $562M inflow on Feb 2, then $272M outflow on Feb 3, then $509M outflow on Feb 1. IBIT saw $230M inflow on Feb 6 (dip buying).",
+          "ETF average cost basis: ~$84,099 — all holdings now deep underwater at current $69K price. ETFs still hold 1.3M BTC (only 5% below October peak).",
+          "Strategy (MSTR) announced today (Feb 9): total holdings now 714,644 BTC at avg price $78,815. Continued buying despite $12.4B Q4 unrealized loss.",
+          "CoinShares: digital asset investment products saw $1.7B weekly outflows — YTD outflows now $1B, signaling 'marked deterioration in investor sentiment.'"
+        ],
+        "zh": [
+          "美国 BTC ETF 自 2025 年 11 月累计流出：约 61.8 亿美元——自 2024 年 1 月上市以来最长持续流出期。",
+          "本周 ETF 剧烈震荡：2 月 2 日流入 5.62 亿，2 月 3 日流出 2.72 亿，2 月 1 日流出 5.1 亿。IBIT 2 月 6 日流入 2.3 亿美元（逢低买入）。",
+          "ETF 平均成本基础：约 $84,099——按当前 $69K 价格所有持仓深度亏损。ETF 仍持有 130 万 BTC（仅低于 10 月峰值 5%）。",
+          "Strategy（MSTR）今日（2 月 9 日）宣布：总持仓达 714,644 BTC，均价 $78,815。尽管 Q4 未实现亏损 124 亿美元仍继续买入。",
+          "CoinShares：数字资产投资产品周流出 17 亿美元——年初至今流出 10 亿美元，表明'投资者情绪明显恶化'。"
+        ]
+      },
+      "analysis": {
+        "en": "The institutional picture reveals a critical three-way split: (1) ETF holders are panicking, with $6.18B cumulative outflows and average cost basis deeply underwater; (2) Strategy just announced 714,644 BTC holdings today, continuing to buy even as they report $12.4B in Q4 unrealized losses — a powerful conviction signal; (3) BlackRock's IBIT is selectively buying dips ($230M on Feb 6) while Fidelity's FBTC is the largest seller. This divergence mirrors the Jan 2023 post-FTX bottom formation pattern where retail/regulated channels capitulated while long-term corporate holders accumulated.",
+        "zh": "机构面呈现关键三方分裂：(1) ETF 持有者正在恐慌，累计流出 61.8 亿美元，平均成本深度亏损；(2) Strategy 今日刚宣布持有 714,644 BTC，尽管 Q4 未实现亏损 124 亿美元仍继续买入——强烈信念信号；(3) 贝莱德 IBIT 在选择性逢低买入（2 月 6 日 2.3 亿美元），而富达 FBTC 是最大卖方。这种分歧模式与 2023 年 1 月 FTX 后底部形成相似——零售/受监管渠道投降而长期企业持有者积累。"
+      },
+      "conclusion": {
+        "en": "Classic divergence intensifying: ETF/regulated channel panic vs corporate/long-term accumulation. Strategy's continued buying at a loss is historically one of the strongest contrarian signals.",
+        "zh": "经典分歧加剧：ETF/受监管渠道恐慌 vs 企业/长期积累。Strategy 持续亏损买入是历史上最强的逆向信号之一。"
+      }
+    },
+    {
+      "key": "macroRisks",
+      "score": 10,
+      "weight": 15,
+      "icon": "🌍",
+      "direction": {
+        "en": "Multi-Front Macro Storm Continues — Precious Metals Carnage",
+        "zh": "多重宏观风暴持续 — 贵金属屠杀"
+      },
+      "evidence": {
+        "en": [
+          "Silver crashed 28-35% on Jan 30 — worst single day since March 1980. Gold fell from record $5,600 to $4,662. Silver now at ~$77 (down 41% from peak).",
+          "Kevin Warsh nominated as Fed Chair successor — markets interpret as hawkish, strengthening USD and reducing rate cut expectations.",
+          "Dollar Index rebounding from 4-year lows, putting pressure on all dollar-denominated risk assets.",
+          "US-Iran geopolitical tensions elevated, adding uncertainty. Tech selloff led by Microsoft (-12% single day) spilling into crypto.",
+          "CME margin hikes on gold (6%→8%) and silver (11%→15%) triggered forced liquidations across commodities, feeding into crypto selling."
+        ],
+        "zh": [
+          "白银 1 月 30 日暴跌 28-35%——自 1980 年 3 月以来最差单日。黄金从纪录高位 $5,600 跌至 $4,662。白银现约 $77（距峰值跌 41%）。",
+          "Kevin Warsh 被提名为美联储主席继任者——市场解读为鹰派，美元走强，降息预期降低。",
+          "美元指数从 4 年低点反弹，对所有美元计价风险资产施压。",
+          "美伊地缘政治紧张升级，增加不确定性。微软领跌的科技股暴跌（单日 -12%）蔓延至加密市场。",
+          "CME 上调黄金（6%→8%）和白银（11%→15%）保证金，触发大宗商品强制平仓，传导至加密抛售。"
+        ]
+      },
+      "analysis": {
+        "en": "The macro picture is the most hostile since Q4 2022. The silver crash is historic — worst since 1980 — and the cross-asset contagion is clear: precious metals, tech stocks, and crypto all selling simultaneously. The Warsh nomination signals no near-term Fed pivot, removing a key bullish catalyst. BTC is trading with 0.7+ correlation to Nasdaq, confirming its role as a high-beta risk asset. The 'digital gold' narrative has completely broken as BTC fell alongside actual gold rather than acting as hedge. Goldman Sachs and JP Morgan remain bullish on gold long-term ($5,400-$6,300 targets) but warn of continued near-term volatility.",
+        "zh": "宏观面是 2022 年 Q4 以来最不利的。白银崩盘具有历史性——1980 年以来最差——跨资产传染明显：贵金属、科技股和加密同时抛售。Warsh 提名表明近期美联储不会转向，消除了关键看涨催化剂。BTC 与纳斯达克相关性超 0.7，确认其高贝塔风险资产角色。'数字黄金'叙事已完全破裂，BTC 与实际黄金同跌而非作为对冲。高盛和摩根大通对黄金长期仍看涨（目标 $5,400-$6,300），但警告近期波动将持续。"
+      },
+      "conclusion": {
+        "en": "Multi-front macro pressure with no clear relief catalyst. However, margin-call forced selling may be largely exhausted, and extreme cross-asset positioning historically creates snapback opportunities.",
+        "zh": "多重宏观压力，无明确缓解催化剂。然而保证金追缴强制抛售可能已大部分耗尽，极端跨资产持仓历史上会创造快速反弹机会。"
+      }
+    },
+    {
+      "key": "socialNarrative",
+      "score": 8,
+      "weight": 15,
+      "icon": "💬",
+      "direction": {
+        "en": "Extreme Fear Persists — FTX-Era Sentiment Levels",
+        "zh": "极度恐惧持续 — FTX 时代情绪水平"
+      },
+      "evidence": {
+        "en": [
+          "Fear & Greed Index at 9 (CoinStats, Feb 9) / 14 (FearGreedMeter) — 'Extreme Fear' zone, near FTX-collapse levels.",
+          "CoinDesk reported index hit 9 on Feb 6 — lowest since FTX collapse in Nov 2022. Readings: yesterday 8, last week 41.",
+          "CoinShares: 'marked deterioration in investor sentiment' with $1B YTD outflows from digital asset products.",
+          "Analysts warn of $40K BTC target (Zacks chief equity strategist). Motley Fool advises 'do nothing' strategy.",
+          "Market mood described as shifting from 'capitulation' to tentative 'accumulation' — but conviction remains fragile."
+        ],
+        "zh": [
+          "恐惧与贪婪指数：9（CoinStats，2 月 9 日）/ 14（FearGreedMeter）——'极度恐惧'区间，接近 FTX 崩盘水平。",
+          "CoinDesk 报道指数 2 月 6 日触及 9——自 2022 年 11 月 FTX 崩盘以来最低。读数：昨日 8，上周 41。",
+          "CoinShares：数字资产产品年初至今流出 10 亿美元，'投资者情绪明显恶化'。",
+          "分析师警告 BTC 可能跌至 $40K（Zacks 首席股票策略师）。Motley Fool 建议'不动'策略。",
+          "市场情绪被描述为从'投降'转向试探性'积累'——但信念仍然脆弱。"
+        ]
+      },
+      "analysis": {
+        "en": "Fear & Greed at 9 is extraordinary — matching FTX-collapse levels and only exceeded by the Feb 7 reading of 6 (per yesterday's report). The rapid plunge from 41 last week to single digits represents one of the fastest sentiment collapses on record. Historical pattern is unambiguous: every reading below 15 (Terra 7, FTX 10, 519 Crash 11, COVID 12) preceded major cycle bottoms with 6-18 month returns of +130% to +1,600%. However, timing remains the challenge — the Terra reading of 7 came months before the actual bottom at $15,479.",
+        "zh": "恐惧与贪婪 9 是非凡的——匹配 FTX 崩盘水平，仅被昨日报告的 6 超越（2 月 7 日读数）。从上周 41 快速暴跌至个位数代表有记录以来最快的情绪崩溃之一。历史模式明确：每次低于 15 的读数（Terra 7、FTX 10、519 崩盘 11、COVID 12）都先于重大周期底部，随后 6-18 个月回报 +130% 至 +1,600%。然而时机仍是挑战——Terra 的 7 读数在实际底部 $15,479 之前数月出现。"
+      },
+      "conclusion": {
+        "en": "Extreme fear at FTX-era levels has historically marked generational buying zones. Risk/reward increasingly favorable for patient long-term positioning, but near-term timing remains uncertain.",
+        "zh": "FTX 时代级别的极度恐惧历史上标志着世代级买入区域。对耐心长期持仓者风险/回报越来越有利，但近期时机仍不确定。"
+      }
+    }
+  ],
+  "historicalEvents": [
+    {
+      "driverKey": "tapeStructure",
+      "driverScore": 10,
+      "event": {
+        "title": {
+          "en": "Terra/Luna Collapse — June 2022",
+          "zh": "Terra/Luna 崩盘 — 2022年6月"
+        },
+        "time": "2022-06",
+        "background": {
+          "en": "Algorithmic stablecoin death spiral triggered broader market contagion. Fear & Greed hit 7 — closest historical comparison to today's 9.",
+          "zh": "算法稳定币死亡螺旋触发更广泛市场传染。恐惧与贪婪跌至 7——与今日 9 最接近的历史对比。"
+        },
+        "description": {
+          "en": [
+            "BTC fell from $40K to $17,600 over several weeks",
+            "Fear & Greed bottomed at 7 — only marginally lower than today's 9",
+            "$40B+ in value destroyed across ecosystem",
+            "Contagion spread to 3AC, Celsius, Voyager — multiple bankruptcies"
+          ],
+          "zh": [
+            "BTC 在数周内从 $40K 跌至 $17,600",
+            "恐惧与贪婪底部 7——仅略低于今日的 9",
+            "生态系统中超过 400 亿美元价值被摧毁",
+            "传染蔓延至 3AC、Celsius、Voyager——多家破产"
+          ]
+        },
+        "aftermath": {
+          "en": [
+            "Absolute bottom at $17,600 in June 2022",
+            "Rallied 360%+ to $74K by March 2024 (18 months)",
+            "KEY: Fear & Greed at 7 marked THE generational bottom"
+          ],
+          "zh": [
+            "2022 年 6 月绝对底部 $17,600",
+            "到 2024 年 3 月涨至 $74K，涨幅超 360%（18 个月）",
+            "关键：恐惧与贪婪 7 标志着世代级底部"
+          ]
+        }
+      }
+    },
+    {
+      "driverKey": "leverageLiquidations",
+      "driverScore": 8,
+      "event": {
+        "title": {
+          "en": "FTX Collapse Cascade — November 2022",
+          "zh": "FTX 崩盘级联 — 2022年11月"
+        },
+        "time": "2022-11",
+        "background": {
+          "en": "FTX collapse triggered massive liquidation cascade. Fear & Greed hit 10. This week's $4B+ total liquidations approach those historic levels.",
+          "zh": "FTX 崩盘触发大规模清算级联。恐惧与贪婪跌至 10。本周超 40 亿美元总清算接近那些历史水平。"
+        },
+        "description": {
+          "en": [
+            "$10B+ liquidations over the week",
+            "BTC dropped to $15,500 — cycle low",
+            "Fear & Greed hit 8-10 range",
+            "Industry-wide contagion and bankruptcies"
+          ],
+          "zh": [
+            "一周清算超 100 亿美元",
+            "BTC 跌至 $15,500——周期低点",
+            "恐惧与贪婪在 8-10 区间",
+            "全行业传染和破产"
+          ]
+        },
+        "aftermath": {
+          "en": [
+            "Bottom at $15,479 in November 2022",
+            "Rallied 350%+ to $74K by March 2024 (16 months)",
+            "KEY: Historic liquidations marked THE cycle bottom"
+          ],
+          "zh": [
+            "2022 年 11 月底部 $15,479",
+            "到 2024 年 3 月涨至 $74K，涨幅超 350%（16 个月）",
+            "关键：历史级清算标志着周期底部"
+          ]
+        }
+      }
+    },
+    {
+      "driverKey": "socialNarrative",
+      "driverScore": 8,
+      "event": {
+        "title": {
+          "en": "519 Black Swan Crash — May 2021",
+          "zh": "519 黑天鹅崩盘 — 2021年5月"
+        },
+        "time": "2021-05",
+        "background": {
+          "en": "China mining ban + Tesla BTC payment halt. Fear & Greed hit 11. Similar waterfall pattern and capitulation sentiment to today.",
+          "zh": "中国矿业禁令 + 特斯拉暂停 BTC 支付。恐惧与贪婪跌至 11。与今天类似的瀑布形态和投降情绪。"
+        },
+        "description": {
+          "en": [
+            "BTC fell from $58K to below $30K in 48 hours — 48% drop",
+            "$8B+ liquidated in 24 hours",
+            "Fear & Greed hit 11",
+            "Mass panic across all crypto social media"
+          ],
+          "zh": [
+            "BTC 48 小时内从 $58K 跌至 $30K 以下——跌幅 48%",
+            "24 小时清算超 80 亿美元",
+            "恐惧与贪婪跌至 11",
+            "所有加密社交媒体大规模恐慌"
+          ]
+        },
+        "aftermath": {
+          "en": [
+            "Bottom found ~$29K in late June",
+            "New ATH $69K by November — just 5 months later",
+            "KEY: Those who panic sold at $30K missed 130%+ gains"
+          ],
+          "zh": [
+            "6 月底在约 $29K 找到底部",
+            "11 月达到 $69K 新高——仅 5 个月后",
+            "关键：在 $30K 恐慌抛售的人错过了 130%+ 涨幅"
+          ]
+        }
+      }
+    },
+    {
+      "driverKey": "institutionalFlows",
+      "driverScore": 15,
+      "event": {
+        "title": {
+          "en": "COVID Crash & Recovery — March 2020",
+          "zh": "COVID 崩盘与复苏 — 2020年3月"
+        },
+        "time": "2020-03",
+        "background": {
+          "en": "Global pandemic panic. Fear & Greed hit 12. BTC fell 58% in days but recovered fastest among all assets. Cross-asset selloff mirrors today.",
+          "zh": "全球疫情恐慌。恐惧与贪婪跌至 12。BTC 数日内跌 58% 但在所有资产中恢复最快。跨资产抛售与今日相似。"
+        },
+        "description": {
+          "en": [
+            "BTC crashed from $9K to $3,800 in 48 hours — 58% drop",
+            "Fear & Greed hit 12 — comparable to today's 9",
+            "Cross-asset panic — stocks, commodities all crashed",
+            "Liquidity crisis across all markets"
+          ],
+          "zh": [
+            "BTC 48 小时内从 $9K 崩至 $3,800——跌幅 58%",
+            "恐惧与贪婪跌至 12——与今日的 9 可比",
+            "跨资产恐慌——股票、大宗商品全面崩盘",
+            "所有市场流动性危机"
+          ]
+        },
+        "aftermath": {
+          "en": [
+            "Absolute bottom at $3,800 in March 2020",
+            "Rallied 1,600%+ to $69K by November 2021 (19 months)",
+            "KEY: Extreme fear during liquidity crisis = best entry of the decade"
+          ],
+          "zh": [
+            "2020 年 3 月绝对底部 $3,800",
+            "到 2021 年 11 月涨至 $69K，涨幅超 1,600%（19 个月）",
+            "关键：流动性危机期间的极度恐惧 = 十年最佳入场点"
+          ]
+        }
+      }
+    }
+  ],
+  "newsTimeline": [
+    {
+      "id": 1,
+      "category": "price",
+      "headline": {
+        "en": "BTC Drifts to $69,150 — Gives Back Recovery Gains",
+        "zh": "BTC 回落至 $69,150 — 回吐复苏涨幅"
+      },
+      "content": {
+        "en": "Bitcoin traded at $69,150 on Feb 9, down ~3% on the day, as the V-shape recovery from $60K loses momentum. Market cap at $1.38 trillion.",
+        "zh": "BTC 2 月 9 日交易于 $69,150，日内跌约 3%，V 型反弹势头减弱。市值 1.38 万亿美元。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Failure to hold $71K recovery suggests ongoing distribution phase.",
+        "zh": "高：未能守住 $71K 复苏位表明持续分配阶段。"
+      }
+    },
+    {
+      "id": 2,
+      "category": "price",
+      "headline": {
+        "en": "BTC Flash Crash to $60,008 on Feb 5 — Worst Since FTX",
+        "zh": "BTC 2 月 5 日闪崩至 $60,008 — FTX 以来最差"
+      },
+      "content": {
+        "en": "Bitcoin plunged 15% on February 5, hitting $60,008 intraday — steepest single-day decline since FTX collapse. Erased all gains since Oct 2024.",
+        "zh": "BTC 于 2 月 5 日暴跌 15%，盘中触及 $60,008——自 FTX 崩盘以来最陡峭的单日跌幅。抹去 2024 年 10 月以来所有涨幅。"
+      },
+      "marketRelevance": {
+        "en": "CRITICAL: Most severe price drop in 15+ months signals potential capitulation.",
+        "zh": "关键：15 个月以上最严重跌幅信号潜在投降。"
+      }
+    },
+    {
+      "id": 3,
+      "category": "price",
+      "headline": {
+        "en": "V-Shape Recovery: BTC Surges Back Above $71,000 on Feb 6",
+        "zh": "V 型反弹：BTC 2 月 6 日飙升回 $71,000 以上"
+      },
+      "content": {
+        "en": "In a dramatic reversal, BTC surged from $60K lows back above $71,000 on Feb 6. CNBC confirmed stocks also rallied: Dow +918 pts, Nvidia +6%.",
+        "zh": "戏剧性逆转中，BTC 于 2 月 6 日从 $60K 低点飙升回 $71,000 以上。CNBC 确认股市也反弹：道指 +918 点，英伟达 +6%。"
+      },
+      "marketRelevance": {
+        "en": "CRITICAL: Recovery speed suggests institutional liquidity providing floor support.",
+        "zh": "关键：恢复速度表明机构流动性提供底部支撑。"
+      }
+    },
+    {
+      "id": 4,
+      "category": "liquidation",
+      "headline": {
+        "en": "$2.56B Liquidated on Feb 1 — 10th Largest Event in History",
+        "zh": "2 月 1 日清算 25.6 亿美元 — 史上第 10 大事件"
+      },
+      "content": {
+        "en": "Saturday Feb 1 saw $2.56 billion in crypto liquidations, the 10th-biggest single-day event ever per Coinglass data. Cascading forced selling amplified the crash.",
+        "zh": "2 月 1 日（周六）加密清算 25.6 亿美元，据 Coinglass 数据为史上第 10 大单日事件。级联强制平仓放大了崩盘。"
+      },
+      "marketRelevance": {
+        "en": "CRITICAL: Historic liquidation levels often precede major bottoms.",
+        "zh": "关键：历史级清算水平往往先于重大底部。"
+      }
+    },
+    {
+      "id": 5,
+      "category": "liquidation",
+      "headline": {
+        "en": "$1.45B Additional Liquidations on Feb 5 — 311K Traders Hit",
+        "zh": "2 月 5 日再清算 14.5 亿美元 — 31.1 万交易者受影响"
+      },
+      "content": {
+        "en": "CoinGlass showed $1.45B in 24-hour liquidations on Feb 5, the 4th-largest in 90 days. 311,000 traders affected; longs accounted for $1.24B.",
+        "zh": "Coinglass 显示 2 月 5 日 24 小时清算 14.5 亿美元，为 90 天内第 4 大。31.1 万交易者受影响；多头占 12.4 亿。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Continued deleveraging creates healthier market structure.",
+        "zh": "高：持续去杠杆创造更健康的市场结构。"
+      }
+    },
+    {
+      "id": 6,
+      "category": "sentiment",
+      "headline": {
+        "en": "Fear & Greed Crashes to 9 — FTX-Era Extreme Fear",
+        "zh": "恐惧与贪婪暴跌至 9 — FTX 时代极度恐惧"
+      },
+      "content": {
+        "en": "Crypto Fear & Greed at 9 on Feb 9 (CoinStats). CoinDesk reported 9 on Feb 6 — lowest since FTX collapse. Yesterday was 8. Last week was 41.",
+        "zh": "加密恐惧与贪婪 2 月 9 日为 9（CoinStats）。CoinDesk 报道 2 月 6 日为 9——自 FTX 崩盘以来最低。昨日为 8，上周为 41。"
+      },
+      "marketRelevance": {
+        "en": "CRITICAL: Readings below 15 have historically preceded 130-1,600% rallies over 6-18 months.",
+        "zh": "关键：低于 15 的读数历史上先于 6-18 个月内 130-1,600% 的涨幅。"
+      }
+    },
+    {
+      "id": 7,
+      "category": "institutional",
+      "headline": {
+        "en": "Strategy Announces 714,644 BTC Holdings Today — Still Buying",
+        "zh": "Strategy 今日宣布持有 714,644 BTC — 仍在买入"
+      },
+      "content": {
+        "en": "Strategy Inc (MSTR) announced today Feb 9: total holdings 714,644 BTC at avg price $78,815. Continued purchases via ATM stock program despite Q4 $12.4B unrealized loss.",
+        "zh": "Strategy Inc（MSTR）2 月 9 日宣布：总持仓 714,644 BTC，均价 $78,815。尽管 Q4 未实现亏损 124 亿美元，仍通过 ATM 股票计划继续买入。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Largest corporate holder continuing to buy at a loss = powerful conviction signal.",
+        "zh": "高：最大企业持有者继续亏损买入 = 强烈信念信号。"
+      }
+    },
+    {
+      "id": 8,
+      "category": "institutional",
+      "headline": {
+        "en": "ETF Cumulative Outflows Hit $6.18B Since November 2025",
+        "zh": "ETF 自 2025 年 11 月累计流出达 61.8 亿美元"
+      },
+      "content": {
+        "en": "US spot BTC ETFs have seen ~$6.18B in cumulative outflows since Nov 2025. Average cost basis at $84,099 — deeply underwater at current $69K.",
+        "zh": "美国现货 BTC ETF 自 2025 年 11 月累计流出约 61.8 亿美元。平均成本基础 $84,099——按当前 $69K 深度亏损。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: ETF holders underwater but still holding 1.3M BTC — capitulation may be exhausting.",
+        "zh": "高：ETF 持有者亏损但仍持有 130 万 BTC——投降可能正在耗尽。"
+      }
+    },
+    {
+      "id": 9,
+      "category": "institutional",
+      "headline": {
+        "en": "IBIT Sees $230M Inflow on Feb 6 — Selective Dip Buying",
+        "zh": "IBIT 2 月 6 日流入 2.3 亿美元 — 选择性逢低买入"
+      },
+      "content": {
+        "en": "BlackRock's IBIT recorded $230.3M net inflow on Feb 6 recovery day. Meanwhile Fidelity's FBTC led selling with $109.5M outflow.",
+        "zh": "贝莱德 IBIT 在 2 月 6 日复苏日录得 2.303 亿美元净流入。同时富达 FBTC 以 1.095 亿美元流出领跌。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: BlackRock buying the dip while others sell signals institutional bifurcation.",
+        "zh": "高：贝莱德逢低买入而其他人卖出，显示机构分化。"
+      }
+    },
+    {
+      "id": 10,
+      "category": "macro",
+      "headline": {
+        "en": "Silver Crashes 28-35% — Worst Day Since March 1980",
+        "zh": "白银暴跌 28-35% — 自 1980 年 3 月以来最差单日"
+      },
+      "content": {
+        "en": "Silver plunged 28-35% on Jan 30, from $120+ record to ~$77 currently. Gold fell from $5,600 record to ~$4,660. Worst precious metals crash in decades.",
+        "zh": "白银 1 月 30 日暴跌 28-35%，从 $120+ 纪录跌至当前约 $77。黄金从 $5,600 纪录跌至约 $4,660。数十年来最严重贵金属崩盘。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Cross-asset correlation amplified crypto selling via shared leverage.",
+        "zh": "高：跨资产相关性通过共享杠杆放大加密抛售。"
+      }
+    },
+    {
+      "id": 11,
+      "category": "macro",
+      "headline": {
+        "en": "Kevin Warsh Nominated as Fed Chair — Hawkish Signal",
+        "zh": "Kevin Warsh 被提名为美联储主席 — 鹰派信号"
+      },
+      "content": {
+        "en": "Trump nominated Kevin Warsh to succeed Jerome Powell. Markets interpret as hawkish — USD strengthens, rate cut expectations diminish.",
+        "zh": "特朗普提名 Kevin Warsh 接替鲍威尔。市场解读为鹰派——美元走强，降息预期降低。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Fed policy remains dominant macro driver for all risk assets.",
+        "zh": "高：美联储政策仍是所有风险资产的主导宏观驱动力。"
+      }
+    },
+    {
+      "id": 12,
+      "category": "macro",
+      "headline": {
+        "en": "CME Raises Margins on Gold & Silver — Amplifying Forced Selling",
+        "zh": "CME 上调黄金白银保证金 — 放大强制平仓"
+      },
+      "content": {
+        "en": "CME raised margins: gold 6%→8%, silver 11%→15%. Forced leveraged speculators to add capital or liquidate, turning correction into crash.",
+        "zh": "CME 上调保证金：黄金 6%→8%，白银 11%→15%。迫使杠杆投机者追加资金或平仓，将修正变为崩盘。"
+      },
+      "marketRelevance": {
+        "en": "MEDIUM-HIGH: Margin hikes historically accelerate selloffs but also create cleaner positioning.",
+        "zh": "中高：保证金上调历史上加速抛售但也创造更清洁的持仓。"
+      }
+    },
+    {
+      "id": 13,
+      "category": "whale",
+      "headline": {
+        "en": "Strategy Q4: $12.4B Unrealized Loss — No Margin Call Risk Until ~$8K",
+        "zh": "Strategy Q4：未实现亏损 124 亿美元 — 约 $8K 前无追保风险"
+      },
+      "content": {
+        "en": "Strategy reported $12.4B unrealized Q4 loss under new fair value accounting. Total debt $8.2B with $2.25B cash buffer. No margin call risk until ~$8K.",
+        "zh": "Strategy 在新公允价值会计下报告 Q4 未实现亏损 124 亿美元。总债务 82 亿美元，22.5 亿美元现金缓冲。约 $8K 前无追保风险。"
+      },
+      "marketRelevance": {
+        "en": "MEDIUM-HIGH: Removes corporate forced selling overhang — MSTR won't be forced to liquidate.",
+        "zh": "中高：消除企业被迫抛售悬念——MSTR 不会被迫清算。"
+      }
+    },
+    {
+      "id": 14,
+      "category": "ecosystem",
+      "headline": {
+        "en": "Weekly RSI Drops Below 21 — Third Lowest in BTC History",
+        "zh": "周线 RSI 跌破 21 — BTC 历史第三低"
+      },
+      "content": {
+        "en": "Bitcoin's weekly RSI fell below 21, the third-lowest oversold reading in its entire trading history. Previous extremes preceded major rallies.",
+        "zh": "BTC 周线 RSI 跌破 21，为其整个交易历史中第三低超卖读数。此前极端值先于重大涨势。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Technical extremes of this magnitude have always preceded significant recoveries.",
+        "zh": "高：这种幅度的技术极端值总是先于显著复苏。"
+      }
+    },
+    {
+      "id": 15,
+      "category": "ecosystem",
+      "headline": {
+        "en": "BTC Breaks Below 365-Day MA — First Time Since March 2022",
+        "zh": "BTC 跌破 365 日均线 — 自 2022 年 3 月以来首次"
+      },
+      "content": {
+        "en": "CryptoQuant reports BTC broke below 365-day moving average for first time since March 2022, declining 23% in 83 days since the breakdown.",
+        "zh": "CryptoQuant 报告 BTC 自 2022 年 3 月以来首次跌破 365 日移动均线，自跌破以来 83 天内下跌 23%。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: 365-day MA breakdown in 2022 preceded further declines — bearish structural signal.",
+        "zh": "高：2022 年 365 日均线跌破后进一步下跌——看跌结构信号。"
+      }
+    },
+    {
+      "id": 16,
+      "category": "sentiment",
+      "headline": {
+        "en": "CoinShares: $1.7B Weekly Outflows — 'Marked Deterioration'",
+        "zh": "CoinShares：周流出 17 亿美元——'明显恶化'"
+      },
+      "content": {
+        "en": "Digital asset investment products recorded $1.7B weekly outflows. YTD outflows $1B — 'signaling marked deterioration in investor sentiment.'",
+        "zh": "数字资产投资产品录得 17 亿美元周流出。年初至今流出 10 亿——'表明投资者情绪明显恶化'。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Institutional outflows at this pace historically signal capitulation phase.",
+        "zh": "高：以此速度的机构流出历史上表明投降阶段。"
+      }
+    },
+    {
+      "id": 17,
+      "category": "sentiment",
+      "headline": {
+        "en": "Analysts Warn of $40K BTC Target — Bears Get Louder",
+        "zh": "分析师警告 BTC 可能跌至 $40K — 空头声音增强"
+      },
+      "content": {
+        "en": "Zacks chief equity strategist John Blank: BTC 'could hit $40,000 this year, very quickly or over 6-8 months.' BTC has previously fallen 70-80% from ATH.",
+        "zh": "Zacks 首席股票策略师 John Blank：BTC '今年可能跌至 $40,000，很快或在 6-8 个月内'。BTC 历史上曾从 ATH 下跌 70-80%。"
+      },
+      "marketRelevance": {
+        "en": "MEDIUM: Extreme bearish calls often cluster near bottoms — but validate fear levels.",
+        "zh": "中：极端看跌呼声常在底部附近聚集——但验证恐惧水平。"
+      }
+    },
+    {
+      "id": 18,
+      "category": "macro",
+      "headline": {
+        "en": "Microsoft Crashes 12% — Tech Selloff Spills Into Crypto",
+        "zh": "微软暴跌 12% — 科技股抛售蔓延至加密"
+      },
+      "content": {
+        "en": "Microsoft fell 12% single-day after Azure AI earnings disappointed. Tech selloff dragged Nasdaq lower, amplifying BTC's correlation-driven decline.",
+        "zh": "微软在 Azure AI 财报令人失望后单日暴跌 12%。科技股抛售拖累纳斯达克下跌，放大了 BTC 的相关性驱动下跌。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: BTC trades with 0.7+ correlation to Nasdaq — tech weakness directly pressures crypto.",
+        "zh": "高：BTC 与纳斯达克相关性超 0.7——科技弱势直接施压加密。"
+      }
+    },
+    {
+      "id": 19,
+      "category": "whale",
+      "headline": {
+        "en": "ETF Holdings Resilient: 1.3M BTC — Only 5% Below October Peak",
+        "zh": "ETF 持仓坚挺：130 万 BTC — 仅低于 10 月峰值 5%"
+      },
+      "content": {
+        "en": "Despite $6.18B outflows, US BTC ETFs still hold ~1.3M BTC in AUM — only 5% below Oct peak of 1.37M BTC. Holdings more resilient than price.",
+        "zh": "尽管流出 61.8 亿美元，美国 BTC ETF 仍持有约 130 万 BTC——仅低于 10 月峰值 137 万 BTC 的 5%。持仓比价格更坚韧。"
+      },
+      "marketRelevance": {
+        "en": "MEDIUM-HIGH: ETF holding resilience suggests outflows may be dominated by short-term traders, not long-term holders.",
+        "zh": "中高：ETF 持仓韧性表明流出可能以短线交易者为主，而非长期持有者。"
+      }
+    },
+    {
+      "id": 20,
+      "category": "ecosystem",
+      "headline": {
+        "en": "Put Premium Over Calls Exceeds 10+ Points — Extreme Options Fear",
+        "zh": "看跌期权溢价超看涨 10+ 点 — 期权极度恐惧"
+      },
+      "content": {
+        "en": "On Deribit, BTC and ETH puts trade at 10+ point premium over calls. Bearish put spreads dominate block flows — extreme defensive positioning.",
+        "zh": "在 Deribit 上，BTC 和 ETH 看跌期权溢价超看涨 10+ 点。看跌期权价差主导大宗交易——极端防御性持仓。"
+      },
+      "marketRelevance": {
+        "en": "HIGH: Extreme options skew often marks sentiment capitulation — contrarian opportunity.",
+        "zh": "高：极端期权偏斜常标志情绪投降——逆向机会。"
+      }
+    }
+  ]
+};
+
+const SentimentGauge = ({ score }) => {
+  const { t } = useLanguage();
+  const { isMobile } = useResponsive();
+  const zones = [
+    { label: t('extremeFear'), range: [0, 20], color: '#DC2626', bg: '#FEE2E2' },
+    { label: t('fear'), range: [20, 40], color: '#F97316', bg: '#FFEDD5' },
+    { label: t('neutral'), range: [40, 60], color: '#A8A29E', bg: '#F5F5F4' },
+    { label: t('optimistic'), range: [60, 80], color: '#84CC16', bg: '#ECFCCB' },
+    { label: t('extremeGreed'), range: [80, 100], color: '#22C55E', bg: '#DCFCE7' },
+  ];
+  const getColor = (s) => s < 20 ? '#DC2626' : s < 40 ? '#F97316' : s < 60 ? '#78716C' : s < 80 ? '#84CC16' : '#22C55E';
+  const getLabel = (s) => s < 20 ? t('extremeFear') : s < 40 ? t('fear') : s < 60 ? t('neutral') : s < 80 ? t('optimistic') : t('extremeGreed');
+  const currentZone = zones.find(z => score >= z.range[0] && score < z.range[1]) || zones[0];
+  const angle = -180 + (score / 100) * 180;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0' }}>
+      <div style={{ position: 'relative', width: isMobile ? 260 : 320, height: isMobile ? 150 : 180 }}>
+        <svg viewBox="0 0 340 190" style={{ width: '100%', height: '100%' }}>
+          <path d="M 20 170 A 150 150 0 0 1 320 170" fill="none" stroke="#F5F5F4" strokeWidth="36" strokeLinecap="round" />
+          {zones.map((zone, i) => {
+            const s = -180 + (zone.range[0] / 100) * 180, e = -180 + (zone.range[1] / 100) * 180;
+            const sr = (s * Math.PI) / 180, er = (e * Math.PI) / 180;
+            return <path key={i} d={`M ${170 + 150 * Math.cos(sr)} ${170 + 150 * Math.sin(sr)} A 150 150 0 0 1 ${170 + 150 * Math.cos(er)} ${170 + 150 * Math.sin(er)}`} fill="none" stroke={zone.color} strokeWidth="32" opacity={currentZone === zone ? 1 : 0.3} />;
+          })}
+          <text x="15" y="185" fontSize="11" fill="#A8A29E">0</text>
+          <text x="162" y="35" fontSize="11" fill="#A8A29E" textAnchor="middle">50</text>
+          <text x="310" y="185" fontSize="11" fill="#A8A29E">100</text>
+          <g>
+            <line x1={170 - 25 * Math.cos(angle * Math.PI / 180)} y1={170 - 25 * Math.sin(angle * Math.PI / 180)} x2={170 + 120 * Math.cos(angle * Math.PI / 180)} y2={170 + 120 * Math.sin(angle * Math.PI / 180)} stroke="#1C1917" strokeWidth="4" strokeLinecap="round" />
+            <circle cx="170" cy="170" r="16" fill="#1C1917" />
+            <circle cx="170" cy="170" r="8" fill="#FAFAF9" />
+            <circle cx="170" cy="170" r="4" fill={getColor(score)} />
+          </g>
+        </svg>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px', color: '#78716C' }}>{t('mssScore')}</span>
+          <span style={{ fontSize: isMobile ? '48px' : '56px', fontWeight: '700', color: getColor(score), lineHeight: 1 }}>{score}</span>
+          <span style={{ fontSize: '18px', color: '#A8A29E' }}>/ 100</span>
+        </div>
+        <div style={{ fontSize: '20px', color: getColor(score), marginTop: '8px', fontWeight: '600' }}>{getLabel(score)}</div>
+        <div style={{ fontSize: '12px', color: currentZone.color, marginTop: '8px', padding: '6px 14px', background: currentZone.bg, borderRadius: '20px', display: 'inline-block', fontWeight: '500' }}>{t('extremeFearZone')}</div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '20px', flexWrap: 'wrap' }}>
+        {zones.map((z, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', background: currentZone === z ? z.bg : 'transparent', borderRadius: '20px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: z.color, opacity: currentZone === z ? 1 : 0.4 }} />
+            <span style={{ fontSize: '11px', color: currentZone === z ? z.color : '#A8A29E', fontWeight: currentZone === z ? '600' : '400' }}>{z.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const DriverCard = ({ driver, expanded, onToggle }) => {
+  const { t, lang } = useLanguage();
+  const getColor = (s) => s < 20 ? '#DC2626' : s < 35 ? '#F97316' : s < 50 ? '#EAB308' : s < 65 ? '#84CC16' : '#22C55E';
+  const getBg = (s) => s < 20 ? '#FEE2E2' : s < 35 ? '#FFEDD5' : s < 50 ? '#FEF3C7' : s < 65 ? '#ECFCCB' : '#DCFCE7';
+  const labels = { tapeStructure: t('tapeStructure'), leverageLiquidations: t('leverageLiquidations'), institutionalFlows: t('institutionalFlows'), macroRisks: t('macroRisks'), socialNarrative: t('socialNarrative') };
+
+  return (
+    <div style={{ background: '#FFF', border: expanded ? `2px solid ${getColor(driver.score)}` : '1px solid #E7E5E4', borderRadius: '12px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', background: expanded ? getBg(driver.score) : 'transparent' }}>
+        <span style={{ fontSize: '28px' }}>{driver.icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '15px', fontWeight: '600', color: '#1C1917' }}>{labels[driver.key]}</span>
+            <span style={{ fontSize: '11px', color: '#78716C', padding: '2px 8px', background: '#F5F5F4', borderRadius: '10px' }}>{t('weight')}: {driver.weight}%</span>
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: getColor(driver.score) }}>{driver.direction[lang]}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: `conic-gradient(${getColor(driver.score)} ${driver.score}%, #E7E5E4 0%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '18px', fontWeight: '700', color: getColor(driver.score) }}>{driver.score}</span>
+            </div>
+          </div>
+          <span style={{ transform: expanded ? 'rotate(180deg)' : '', transition: 'transform 0.2s', color: '#A8A29E' }}>▼</span>
+        </div>
+      </div>
+      {expanded && (
+        <div style={{ padding: '20px', borderTop: '1px solid #E7E5E4', background: '#FAFAF9' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#57534E', marginBottom: '12px', textTransform: 'uppercase' }}>📋 {t('evidence')}</div>
+            <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '14px', color: '#44403C', lineHeight: 1.8 }}>
+              {driver.evidence[lang].map((item, i) => <li key={i} style={{ marginBottom: '10px' }}>{item}</li>)}
+            </ul>
+          </div>
+          <div style={{ marginBottom: '20px', padding: '16px', background: '#FFF', borderRadius: '10px', border: '1px solid #E7E5E4' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#57534E', marginBottom: '10px', textTransform: 'uppercase' }}>🔍 {t('analysis')}</div>
+            <div style={{ fontSize: '14px', color: '#44403C', lineHeight: 1.8 }}>{driver.analysis[lang]}</div>
+          </div>
+          <div style={{ padding: '14px 16px', background: getBg(driver.score), borderRadius: '8px', borderLeft: `4px solid ${getColor(driver.score)}` }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#57534E', marginBottom: '8px', textTransform: 'uppercase' }}>🎯 {t('conclusion')}</div>
+            <div style={{ fontSize: '14px', color: getColor(driver.score), lineHeight: 1.6, fontWeight: '500' }}>{driver.conclusion[lang]}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const HistoricalCard = ({ event, expanded, onToggle }) => {
+  const { t, lang } = useLanguage();
+  const getColor = (s) => s < 20 ? '#DC2626' : s < 35 ? '#F97316' : s < 50 ? '#EAB308' : s < 65 ? '#84CC16' : '#22C55E';
+  const labels = { tapeStructure: lang === 'zh' ? '价格与结构' : 'Tape', leverageLiquidations: lang === 'zh' ? '杠杆与清算' : 'Leverage', institutionalFlows: lang === 'zh' ? '机构/链上' : 'Institutional', macroRisks: lang === 'zh' ? '宏观' : 'Macro', socialNarrative: lang === 'zh' ? '社交叙事' : 'Narrative' };
+
+  return (
+    <div style={{ background: '#FFF', border: '1px solid #E7E5E4', borderRadius: '12px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px', background: expanded ? '#F5F5F4' : 'transparent' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: getColor(event.driverScore), background: '#F5F5F4', padding: '3px 10px', borderRadius: '12px' }}>{labels[event.driverKey]} ({event.driverScore})</span>
+            <span style={{ fontSize: '12px', color: '#78716C' }}>{event.event.time}</span>
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: '600', color: '#1C1917' }}>{event.event.title[lang]}</div>
+        </div>
+        <span style={{ transform: expanded ? 'rotate(180deg)' : '', transition: 'transform 0.2s', color: '#A8A29E' }}>▼</span>
+      </div>
+      {expanded && (
+        <div style={{ padding: '20px', borderTop: '1px solid #E7E5E4', background: '#FAFAF9' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#57534E', marginBottom: '10px', textTransform: 'uppercase' }}>📖 {t('backgroundContext')}</div>
+            <div style={{ fontSize: '14px', color: '#44403C', lineHeight: 1.8, padding: '14px', background: '#FFF', borderRadius: '8px', border: '1px solid #E7E5E4' }}>{event.event.background[lang]}</div>
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#57534E', marginBottom: '10px', textTransform: 'uppercase' }}>📋 {t('marketConditions')}</div>
+            <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '14px', color: '#44403C', lineHeight: 1.8 }}>
+              {event.event.description[lang].map((item, i) => <li key={i} style={{ marginBottom: '8px' }}>{item}</li>)}
+            </ul>
+          </div>
+          <div style={{ padding: '16px', background: '#EFF6FF', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#1E40AF', marginBottom: '12px', textTransform: 'uppercase' }}>📈 {t('whatHappened')}</div>
+            <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '14px', color: '#1E3A8A', lineHeight: 1.8 }}>
+              {event.event.aftermath[lang].map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{item}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NewsCard = ({ item, expanded, onToggle }) => {
+  const { t, lang } = useLanguage();
+  const cats = { price: { color: '#DC2626', bg: '#FEE2E2', icon: '📉' }, liquidation: { color: '#F97316', bg: '#FFEDD5', icon: '⚡' }, whale: { color: '#22C55E', bg: '#DCFCE7', icon: '🐋' }, institutional: { color: '#3B82F6', bg: '#DBEAFE', icon: '🏛️' }, macro: { color: '#8B5CF6', bg: '#EDE9FE', icon: '🌍' }, ecosystem: { color: '#06B6D4', bg: '#CFFAFE', icon: '🔗' }, sentiment: { color: '#A8A29E', bg: '#F5F5F4', icon: '💭' } };
+  const cat = cats[item.category] || cats.sentiment;
+
+  return (
+    <div style={{ background: '#FFF', border: '1px solid #E7E5E4', borderRadius: '12px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{cat.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '15px', fontWeight: '600', color: '#1C1917', lineHeight: 1.5, marginBottom: '6px' }}>{item.headline[lang]}</div>
+          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: cat.bg, color: cat.color, fontWeight: '500' }}>{cat.icon} {item.category}</span>
+        </div>
+        <span style={{ transform: expanded ? 'rotate(180deg)' : '', transition: 'transform 0.2s', color: '#A8A29E', flexShrink: 0 }}>▼</span>
+      </div>
+      {expanded && (
+        <div style={{ padding: '20px', borderTop: '1px solid #F5F5F4', background: '#FAFAF9' }}>
+          <div style={{ fontSize: '14px', color: '#44403C', lineHeight: 1.8, marginBottom: '16px' }}>{item.content[lang]}</div>
+          <div style={{ padding: '12px 14px', background: cat.bg, borderRadius: '8px', borderLeft: `3px solid ${cat.color}` }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', color: cat.color, marginBottom: '4px', textTransform: 'uppercase' }}>{t('marketRelevance')}</div>
+            <div style={{ fontSize: '13px', color: cat.color, fontWeight: '500' }}>{item.marketRelevance[lang]}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MainContent = () => {
+  const { lang, t } = useLanguage();
+  const { isMobile } = useResponsive();
+  const [expandedDriver, setExpandedDriver] = useState(0);
+  const [expandedEvent, setExpandedEvent] = useState(0);
+  const [expandedNews, setExpandedNews] = useState(null);
+  const [newsFilter, setNewsFilter] = useState('all');
+
+  const filteredNews = newsFilter === 'all' ? reportData.newsTimeline : reportData.newsTimeline.filter(n => n.category === newsFilter);
+  const categories = ['all', 'price', 'liquidation', 'whale', 'institutional', 'macro', 'ecosystem', 'sentiment'];
+  const catLabels = { all: lang === 'zh' ? '全部' : 'All', price: lang === 'zh' ? '价格' : 'Price', liquidation: lang === 'zh' ? '清算' : 'Liquidation', whale: lang === 'zh' ? '鲸鱼' : 'Whale', institutional: lang === 'zh' ? '机构' : 'Institutional', macro: lang === 'zh' ? '宏观' : 'Macro', ecosystem: lang === 'zh' ? '生态' : 'Ecosystem', sentiment: lang === 'zh' ? '情绪' : 'Sentiment' };
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #FAFAF9 0%, #F5F5F4 100%)', fontFamily: '"Inter", -apple-system, sans-serif', color: '#1C1917', lineHeight: 1.7 }}>
+      <header style={{ maxWidth: '900px', margin: '0 auto', padding: isMobile ? '20px 16px 24px' : '32px 24px 40px', borderBottom: '1px solid #E7E5E4' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <span style={{ fontSize: '12px', color: '#FFF', background: '#DC2626', padding: '4px 12px', borderRadius: '6px', fontWeight: '600' }}>🚨 {reportData.date} - EXTREME FEAR (6)</span>
+          <LanguageToggle />
+        </div>
+        <h1 style={{ fontSize: isMobile ? '26px' : '36px', fontWeight: '600', margin: '0 0 10px', color: '#0C0A09' }}>{t('pageTitle')}</h1>
+        <p style={{ fontSize: '15px', color: '#78716C', margin: '0 0 12px' }}>{t('pageSubtitle')}</p>
+        <div style={{ fontSize: '12px', color: '#A8A29E' }}>{t('dataSource')}: {reportData.dataSource[lang]}</div>
+      </header>
+
+      <main style={{ maxWidth: '900px', margin: '0 auto', padding: isMobile ? '0 16px 60px' : '0 24px 80px' }}>
+        <section style={{ padding: isMobile ? '32px 0' : '48px 0', borderBottom: '1px solid #E7E5E4' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A8A29E', margin: '0 0 6px' }}>{lang === 'zh' ? '一' : '01'} | {t('marketPulse')}</h2>
+            <p style={{ fontSize: '15px', color: '#78716C', margin: 0 }}>{t('marketPulseDesc')}</p>
+          </div>
+          <div style={{ background: '#FFF', border: '2px solid #DC2626', borderRadius: '16px', padding: isMobile ? '20px 16px' : '28px 24px', marginBottom: '24px', boxShadow: '0 4px 24px rgba(220,38,38,0.1)' }}>
+            <SentimentGauge score={reportData.mssScore} />
+            <div style={{ marginTop: '16px', padding: '14px 18px', background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: '10px', fontSize: '13px', color: '#991B1B', lineHeight: 1.6, textAlign: 'center' }}>
+              <strong>⚠️ {t('meaningLabel')}:</strong> {lang === 'zh' ? 'MSS 读数 11 匹配 FTX 崩盘时期水平（Terra 崩盘时为 7 以来最低）。历史上恐惧与贪婪低于 15 的读数总是先于重大周期底部，随后 6-18 个月回报 +130% 至 +1,600%。' : 'MSS reading of 11 matches FTX-collapse era levels. Historically, Fear & Greed readings below 15 have ALWAYS preceded major cycle bottoms with 6-18 month returns of +130% to +1,600%.'}
+            </div>
+          </div>
+          <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#57534E', margin: '0 0 16px' }}>{t('contributingFactors')}</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {reportData.drivers.map((d, i) => <DriverCard key={d.key} driver={d} expanded={expandedDriver === i} onToggle={() => setExpandedDriver(expandedDriver === i ? -1 : i)} />)}
+          </div>
+        </section>
+
+        <section style={{ padding: isMobile ? '32px 0' : '48px 0', borderBottom: '1px solid #E7E5E4' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A8A29E', margin: '0 0 6px' }}>{lang === 'zh' ? '二' : '02'} | {t('historicalReplay')}</h2>
+            <p style={{ fontSize: '15px', color: '#78716C', margin: 0 }}>{t('historicalReplayDesc')}</p>
+          </div>
+          <div style={{ padding: '12px 16px', background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: '8px', marginBottom: '20px', fontSize: '13px', color: '#166534' }}>
+            💡 {lang === 'zh' ? '关键洞察：恐惧与贪婪指数 11 接近 FTX 崩盘时期水平。历史模式显示：此类极端读数（Terra 7、FTX 10、519 11、COVID 12）之后 6-18 个月回报范围为 +130% 至 +1,600%。' : 'KEY INSIGHT: Fear & Greed at 11 matches FTX-collapse era levels. Historical pattern: such extreme readings (Terra 7, FTX 10, 519 11, COVID 12) have been followed by 6-18 month returns ranging from +130% to +1,600%.'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {reportData.historicalEvents.map((e, i) => <HistoricalCard key={i} event={e} expanded={expandedEvent === i} onToggle={() => setExpandedEvent(expandedEvent === i ? -1 : i)} />)}
+          </div>
+        </section>
+
+        <section style={{ padding: isMobile ? '32px 0' : '48px 0' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A8A29E', margin: '0 0 6px' }}>{lang === 'zh' ? '三' : '03'} | {t('newsTimeline')}</h2>
+            <p style={{ fontSize: '15px', color: '#78716C', margin: 0 }}>{t('newsTimelineDesc')}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', padding: '12px 16px', background: '#FFF', borderRadius: '10px', border: '1px solid #E7E5E4' }}>
+            {categories.map(c => {
+              const count = c === 'all' ? reportData.newsTimeline.length : reportData.newsTimeline.filter(n => n.category === c).length;
+              return (
+                <button key={c} onClick={() => setNewsFilter(c)} style={{
+                  padding: '6px 14px', fontSize: '12px', fontWeight: newsFilter === c ? '600' : '400',
+                  border: newsFilter === c ? '2px solid #1C1917' : '1px solid #E7E5E4', borderRadius: '20px',
+                  background: newsFilter === c ? '#1C1917' : '#FFF', color: newsFilter === c ? '#FFF' : '#57534E', cursor: 'pointer'
+                }}>{catLabels[c]} ({count})</button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filteredNews.map((item) => <NewsCard key={item.id} item={item} expanded={expandedNews === item.id} onToggle={() => setExpandedNews(expandedNews === item.id ? null : item.id)} />)}
+          </div>
+        </section>
+      </main>
+
+      <footer style={{ maxWidth: '900px', margin: '0 auto', padding: '24px', textAlign: 'center', borderTop: '1px solid #E7E5E4' }}>
+        <div style={{ fontSize: '12px', color: '#A8A29E' }}>{t('reportDate')}: {reportData.date} | {t('dataSource')}: {reportData.dataSource[lang]}</div>
+        <div style={{ fontSize: '11px', color: '#D6D3D1', marginTop: '8px' }}>
+          {lang === 'zh' ? '⚠️ 免责声明：本报告仅供信息参考，不构成投资建议。加密货币投资风险极高，请谨慎决策。' : '⚠️ Disclaimer: This report is for informational purposes only and does not constitute investment advice. Cryptocurrency investments carry extreme risk.'}
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+function CryptoRadarReport() {
+  return (
+    <LanguageProvider>
+      <MainContent />
+    </LanguageProvider>
+  );
+}
+
+
+        // 渲染应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(CryptoRadarReport));
+    </script>
+</body>
+</html>
